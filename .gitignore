@@ -1,0 +1,16 @@
+config.json
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.jsonl
+vehicle_image.*
+stream_data.*
+stream.log
+stream_error.log
+test.jsonl
+.DS_Store
+*.swp
+*.swo
+*~

@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.bmw_cardata_config.json
+*.jsonl
+vehicle_image.*
+stream_data.*
+stream.log
+stream_error.log
+test.jsonl
+
