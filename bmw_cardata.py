@@ -1063,7 +1063,7 @@ class BMWCardataStreamingClient:
             )
             
             print(f"Verbinde zum Broker...", file=sys.stderr)
-            self.client.connect(self.host, self.port, keepalive=60)
+            self.client.connect(self.host, self.port, keepalive=30)
             
             return True
         
