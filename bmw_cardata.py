@@ -1014,7 +1014,10 @@ class BMWCardataStreamingClient:
         
         try:
             with open(file_path, 'r') as f:
-                data = json.load(f)
+                lines = [l for l in f.read().splitlines() if l.strip()]
+                if not lines:
+                    return False
+                data = json.loads(lines[-1])
                 if isinstance(data, dict) and 'error' in data:
                     return False
                 return True
@@ -1109,8 +1112,8 @@ class BMWCardataStreamingClient:
                     aggregated = self._aggregate_latest_data(self.collected_messages)
                     output_path = Path(self.output_file)
                     output_path.parent.mkdir(parents=True, exist_ok=True)
-                    with open(self.output_file, 'w') as f:
-                        json.dump(aggregated, f, indent=2, ensure_ascii=False)
+                    with open(self.output_file, 'a') as f:
+                        f.write(json.dumps(aggregated, ensure_ascii=False) + '\n')
                     print(f"✓ {self.message_count} Nachrichten empfangen. Aggregierte Daten gespeichert in {self.output_file}", file=sys.stderr)
                 elif self.message_count == 0:
                     if not self._has_valid_data(self.output_file):
@@ -1121,8 +1124,8 @@ class BMWCardataStreamingClient:
                         }
                         output_path = Path(self.output_file)
                         output_path.parent.mkdir(parents=True, exist_ok=True)
-                        with open(self.output_file, 'w') as f:
-                            json.dump(error_data, f, indent=2, ensure_ascii=False)
+                        with open(self.output_file, 'a') as f:
+                            f.write(json.dumps(error_data, ensure_ascii=False) + '\n')
                         print(f"⚠ Keine Nachricht empfangen. Fehlerstatus gespeichert in {self.output_file}", file=sys.stderr)
                     else:
                         print(f"✓ Keine neue Nachricht empfangen. Bestehende Datei {self.output_file} bleibt unverändert.", file=sys.stderr)
