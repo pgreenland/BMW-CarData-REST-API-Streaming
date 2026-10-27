@@ -772,6 +772,12 @@ class BMWCardataStreamingClient:
         if not self.topic:
             raise ValueError("Topic or VIN must be provided")
 
+    def _check_refresh_token(self) -> bool:
+        """Checks whether the ID token needs to be refreshed"""
+        if self._is_token_expired():
+            return self._refresh_id_token()
+        return True
+
     def _is_token_expired(self) -> bool:
         """Checks whether the ID token has expired"""
         if not self.password:
@@ -788,13 +794,12 @@ class BMWCardataStreamingClient:
             if exp == 0:
                 return True
             now = time.time()
-            # 5 second buffer to avoid race conditions
-            return now >= (exp - 5)
+            return now >= (exp - 300)  # 5 minute buffer to avoid race conditions
         except Exception as e:
             logger.warning(f"Error checking token expiry: {e}")
             return True
 
-    def refresh_id_token(self) -> bool:
+    def _refresh_id_token(self) -> bool:
         """
         Refreshes the ID token using the refresh token
 
@@ -828,6 +833,7 @@ class BMWCardataStreamingClient:
                 logger.error("No ID token in response")
                 return False
 
+            # Update local password with the new ID token
             self.password = new_id_token
 
             if 'refresh_token' in token_data:
@@ -899,6 +905,9 @@ class BMWCardataStreamingClient:
         rc = reason_code if isinstance(reason_code, int) else reason_code.value
         if rc != 0:
             logger.error(f"Unexpected disconnect. Code: {rc}")
+        if self._check_refresh_token():
+            # Provide updated username and password to the MQTT client
+            client.username_pw_set(self.username, self.password)
 
     def _on_message(self, client, userdata, msg):
         """Callback invoked when a message is received"""
@@ -1043,11 +1052,8 @@ class BMWCardataStreamingClient:
         Returns:
             True if the connection succeeded
         """
-        if self._is_token_expired():
-            logger.warning("ID token has expired")
-            if not self.refresh_id_token():
-                logger.error("Token refresh failed")
-                return False
+        if not self._check_refresh_token():
+            return False
 
         try:
             self.client = mqtt.Client(
